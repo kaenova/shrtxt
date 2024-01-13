@@ -1,0 +1,84 @@
+version: '3'
+services:
+  # reverse proxy
+  proxy:
+    image: "traefik:v2.5"
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+  
+  # main database
+  db:
+    image: postgres:16.1-alpine3.19
+    environment:
+      - POSTGRES_PASSWORD=changeme
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=main
+
+  # message queue service
+  nsqlookupd:
+    image: nsqio/nsq
+    restart: always
+    command: /nsqlookupd
+    expose:
+      - 4160
+      - 4161
+
+  nsqd:
+    image: nsqio/nsq
+    restart: always
+    command: /nsqd --broadcast-address=nsqd --lookupd-tcp-address=nsqlookupd:4160
+    depends_on:
+      - nsqlookupd
+    expose:
+      - 4151
+      - 4150
+
+  nsqadmin:
+    image: nsqio/nsq
+    restart: always
+    command: /nsqadmin --lookupd-http-address=nsqlookupd:4161
+    depends_on:
+      - nsqlookupd
+    expose:
+      - 4171
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nsq.rule=Host(`nsq.localhost`)"
+      - "traefik.http.services.nsq.loadbalancer.server.port=4171"
+
+  # web service
+  web:
+    image: mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm
+    depends_on:
+      - "db"
+      - "nsqd"
+    volumes:
+      # Mount the root folder that contains .git
+      - .:/workspace:cached
+    command: sleep infinity
+    container_name: web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`localhost`)"
+      - "traefik.http.services.web.loadbalancer.server.port=3000"
+
+  # Data Input Service
+  shrtxt-data-input:
+    image: "mcr.microsoft.com/devcontainers/go:0-1.19-bullseye"
+    depends_on:
+      - "web"
+    volumes:
+      # Mount the root folder that contains .git
+      - .:/workspace:cached
+    command: sleep infinity
+    container_name: shrtxt-data-input

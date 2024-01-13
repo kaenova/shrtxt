@@ -1,0 +1,7 @@
+{
+	"name": "Data Input Container",
+	"dockerComposeFile": ["../../docker-compose.yaml"],
+	"service": "shrtxt-data-input",
+	"shutdownAction": "none",
+	"workspaceFolder": "/workspace/data-input"
+}
