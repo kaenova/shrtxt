@@ -79,6 +79,7 @@ model Project {
   status   String
   fileUrl  String
   Cluster  Cluster[]
+  Text     Text[]
 }
 
 model Cluster {
@@ -93,10 +94,12 @@ model Cluster {
 
 model Text {
   id        Int    @id @default(autoincrement())
+  projectId String
   clusterId Int?
   value     String
 
   clusterSimilarityValue Float?
 
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   cluster Cluster? @relation(fields: [clusterId], references: [id], onDelete: Cascade)
 }
