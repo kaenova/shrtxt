@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   # reverse proxy
   proxy:
@@ -11,11 +11,11 @@ services:
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
-      - "8080:8080"  # Traefik dashboard
+      - "8080:8080" # Traefik dashboard
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
-  
+
   # main database
   db:
     image: postgres:16.1-alpine3.19
@@ -25,6 +25,19 @@ services:
       - POSTGRES_DB=main
     ports:
       - "5432:5432"
+
+  # database interface
+  db-inf:
+    image: dpage/pgadmin4:latest
+    depends_on:
+      - db
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.db.rule=Host(`db.localhost`)"
+      - "traefik.http.services.db.loadbalancer.server.port=80"
 
   # message queue service
   nsqlookupd:
@@ -79,6 +92,7 @@ services:
     image: "mcr.microsoft.com/devcontainers/go:0-1.19-bullseye"
     depends_on:
       - "web"
+      - "nsqd"
     volumes:
       # Mount the root folder that contains .git
       - .:/workspace:cached
