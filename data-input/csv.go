@@ -25,7 +25,7 @@ func ParseCSV(filePath string) ([]string, error) {
 		return nil, err
 	}
 	if len(header) != 1 || header[0] != "text" {
-		return nil, fmt.Errorf("invalid CSV header. Expected a single column named 'text'")
+		return nil, fmt.Errorf("invalid csv header. expected a single column named 'text'")
 	}
 
 	var texts []string
