@@ -1,0 +1,7 @@
+{
+	"name": "Embedding Container",
+	"dockerComposeFile": ["../../docker-compose.yaml"],
+	"service": "shrtxt-embedding",
+	"shutdownAction": "none",
+	"workspaceFolder": "/workspace/embedding"
+}

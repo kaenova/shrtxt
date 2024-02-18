@@ -98,3 +98,39 @@ services:
       - .:/workspace:cached
     command: sleep infinity
     container_name: shrtxt-data-input
+    environment:
+      - MAXIMUM_ROWS=100000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=changeme
+      - DB_NAME=main
+      - NSQD_HOST=nsqd
+      - NSQD_PORT=4150
+      - NSQD_DATA_INPUT_TOPIC="data-input"
+      - NSQD_DATA_INPUT_CHANNEL="data-input-worker"
+      - NSQD_EMBED_TEXT_TOPIC="embed-text"
+
+  # Embedding Service
+  shrtxt-embedding:
+    image: "mcr.microsoft.com/vscode/devcontainers/rust"
+    depends_on:
+      - "web"
+      - "nsqd"
+    volumes:
+      # Mount the root folder that contains .git
+      - .:/workspace:cached
+    command: sleep infinity
+    container_name: shrtxt-embedding
+    user: root
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=changeme
+      - DB_NAME=main
+      - NSQD_HOST=nsqd
+      - NSQD_PORT=4150
+      - NSQD_EMBED_TEXT_TOPIC="embed-text"
+      - NSQD_EMBED_TEXT_CHANNEL="embed-text-worker"
+      - NSQD_CLUSTER_TEXT_TOPIC="cluster-text"

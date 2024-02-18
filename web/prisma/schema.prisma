@@ -75,7 +75,7 @@ model VerificationToken {
 model Project {
   id       String    @id @default(cuid())
   name     String
-  password String
+  password String?
   status   String
   fileUrl  String
   Cluster  Cluster[]
@@ -98,6 +98,7 @@ model Text {
   clusterId Int?
   value     String
 
+  embeddings  Json?
   clusterSimilarityValue Float?
 
   project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

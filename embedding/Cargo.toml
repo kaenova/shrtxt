@@ -1,0 +1,14 @@
+[package]
+name = "embedding"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rust-bert = { version = "0.22.0", features = ["download-libtorch"]}
+anyhow = "1.0"
+postgres = "0.19.7"
+simple-error = "0.3.0"
+sqlx = { version = "0.7", features = [ "runtime-tokio", "postgres", "json" ] }
+tokio = {version = "1.36.0", features = ["full", "rt", "macros"]}
