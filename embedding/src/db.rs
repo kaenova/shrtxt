@@ -1,17 +1,10 @@
+use serde_json::json;
 use sqlx::{Pool, Postgres, Row, Transaction};
 
 // Table Name "Project"
 pub struct Project {
     pub id: String,   // Column names "id"
     pub name: String, // Column names "name"
-}
-
-// Table Name "Text"
-pub struct Text {
-    pub id: i32,              // Column names "id"
-    pub project_id: String,   // Column names "projectId"
-    pub value: String,        // Column names "value"
-    pub embeddings: Vec<f32>, // Column names "embeddings"
 }
 
 pub async fn new_database_pool(
@@ -31,11 +24,7 @@ pub async fn new_database_pool(
     let q_res = sqlx::query("SELECT 1 as one").fetch_all(&pool).await;
     match q_res {
         Err(e) => panic!("Cannot connect to database: {}", e),
-        Ok(v) => {
-            for rec in v {
-                let one: i32 = rec.get("one");
-                println!("one: {}", one);
-            }
+        Ok(_) => {
             println!("Connected to database");
         }
     }
@@ -86,6 +75,44 @@ pub async fn change_project_status_by_id(
         .bind(id)
         .execute(&mut **trx)
         .await;
+
+    match res {
+        Ok(v) => Ok(v.rows_affected()),
+        Err(e) => Err(e),
+    }
+}
+
+pub async fn delete_all_texts_by_project_id(
+    trx: &mut Transaction<'_, Postgres>,
+    project_id: &str,
+) -> Result<u64, sqlx::Error> {
+    let res = sqlx::query(r#"DELETE FROM "Text" WHERE "projectId" = $1"#)
+        .bind(project_id)
+        .execute(&mut **trx)
+        .await;
+
+    match res {
+        Ok(v) => Ok(v.rows_affected()),
+        Err(e) => Err(e),
+    }
+}
+
+pub async fn insert_text(
+    trx: &mut Transaction<'_, Postgres>,
+    project_id: &str,
+    value: &str,
+    embeddings: Vec<f32>,
+) -> Result<u64, sqlx::Error> {
+    let embeddings_json = json!(embeddings);
+
+    let res = sqlx::query(
+        r#"INSERT INTO "Text" ("projectId", value, embeddings) VALUES ($1, $2, $3) RETURNING id"#,
+    )
+    .bind(project_id)
+    .bind(value)
+    .bind(embeddings_json)
+    .execute(&mut **trx)
+    .await;
 
     match res {
         Ok(v) => Ok(v.rows_affected()),

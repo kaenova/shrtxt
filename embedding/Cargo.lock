@@ -455,6 +455,7 @@ dependencies = [
  "anyhow",
  "postgres",
  "rust-bert",
+ "serde_json",
  "simple-error",
  "sqlx",
  "tokio",

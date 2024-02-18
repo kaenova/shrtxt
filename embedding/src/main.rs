@@ -2,6 +2,8 @@ mod db;
 mod env;
 mod model;
 
+use core::panic;
+
 use model::EmbeddingModel;
 use rust_bert::pipelines::sentence_embeddings::SentenceEmbeddingsModelType;
 
@@ -9,12 +11,6 @@ use rust_bert::pipelines::sentence_embeddings::SentenceEmbeddingsModelType;
 async fn main() -> anyhow::Result<()> {
     // Get Environemnt
     let env = env::get_environment();
-
-    // Testing Embedding
-    let model = EmbeddingModel::new(SentenceEmbeddingsModelType::AllMiniLmL6V2);
-    let test = "Anjing kau";
-    let data = model.encode(test);
-    println!("{data:?}");
 
     let pool =  db::new_database_pool(
         &env.database_host,
@@ -25,18 +21,37 @@ async fn main() -> anyhow::Result<()> {
     )
     .await;
 
+    let dummy_project_id = "clsr02t9i000008jq38rg9he1";
+    let dummy_text = "Anjing kau";
+
+    // Testing Embedding
+    let model = EmbeddingModel::new(SentenceEmbeddingsModelType::AllMiniLmL6V2);
+    let data = model.encode(dummy_text);
+    if data.is_none() {
+        panic!("Cannot create embeddings");
+    }
+    let embeddings = data.unwrap();
+    println!("{embeddings:?}");
+
+    // Test Database    
     db::get_tables(&pool) // Get tables
         .await
         .iter()
         .for_each(|table| println!("Table: {}", table));
 
-    let projects = db::get_project_by_id(&pool, "clsr02t9i000008jq38rg9he1").await;
+    let projects = db::get_project_by_id(&pool, dummy_project_id).await;
     println!("projects len {:?}", projects.len());
 
     let mut trx = pool.begin().await?;
-    db::change_project_status_by_id(&mut trx, "clsr02t9i000008jq38rg9he1", "tolol").await?;
+    db::change_project_status_by_id(&mut trx, dummy_project_id, "tolol").await?;
 
-    trx.rollback().await.unwrap();
+    let res_id = db::insert_text(&mut trx, dummy_project_id, dummy_text, embeddings).await?;
+    println!("res_id {:?}", res_id);
+
+
+    db::delete_all_texts_by_project_id(&mut trx, dummy_project_id).await?;
+
+    trx.commit().await.unwrap();
 
     Ok(())
 }

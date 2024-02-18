@@ -20,14 +20,14 @@ impl EmbeddingModel {
     }
 
     // An instance method
-    pub fn encode(&self, input: &str) -> Vec<Vec<f32>> {
+    pub fn encode(&self, input: &str) -> Option<Vec<f32>> {
         let model_input: [&str; 1] = [input];
         let embeddings = self.model.encode(&model_input);
         match embeddings {
             Err(e) => {
                 panic!("Cannot crate embeddings: {}", e)
             }
-            Ok(v) => v,
+            Ok(v) => v.last().cloned(),
         }
     }
 }
