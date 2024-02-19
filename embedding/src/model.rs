@@ -2,6 +2,8 @@ use rust_bert::pipelines::sentence_embeddings::{
     SentenceEmbeddingsBuilder, SentenceEmbeddingsModel, SentenceEmbeddingsModelType,
 };
 
+use crate::utils;
+
 pub struct EmbeddingModel {
     model: SentenceEmbeddingsModel,
 }
@@ -20,14 +22,28 @@ impl EmbeddingModel {
     }
 
     // An instance method
-    pub fn encode(&self, input: &str) -> Option<Vec<f32>> {
-        let model_input: [&str; 1] = [input];
-        let embeddings = self.model.encode(&model_input);
-        match embeddings {
-            Err(e) => {
-                panic!("Cannot crate embeddings: {}", e)
+    pub fn encode(&self, inputs: &Vec<&str>, batch_size: i64) -> Vec<Vec<f32>> {
+        
+        let batches = utils::batch(inputs, batch_size);
+        let mut final_results: Vec<Vec<f32>> = Vec::new();
+
+        println!("inputs: {:?}", inputs);
+        println!("batches: {:?}", batches);
+
+        for batch in batches {
+            let results = self.model.encode(batch.as_slice());
+            match results {
+                Ok(v) => {
+                    for result in v {
+                        final_results.push(result);
+                    }
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                }
             }
-            Ok(v) => v.last().cloned(),
         }
+
+        final_results
     }
 }
