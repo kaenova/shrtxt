@@ -8,16 +8,18 @@ import (
 )
 
 var (
-	NSQD_HOST               = datainput.EnvDefault("NSQD_HOST", "nsqd")
-	NSQD_PORT               = datainput.EnvDefault("NSQD_PORT", "4150")
-	NSQD_DATA_INPUT_TOPIC   = datainput.EnvDefault("NSQD_TOPIC", "data-input")
+	NSQD_CONSUMER_HOST      = datainput.EnvDefault("NSQD_CONSUMER_HOST", "nsqlookupd")
+	NSQD_CONSUMER_PORT      = datainput.EnvDefault("NSQD_CONSUMER_PORT", "4161")
+	NSQD_PRODUCER_HOST      = datainput.EnvDefault("NSQD_PRODUCER_HOST", "nsqd")
+	NSQD_PRODUCER_PORT      = datainput.EnvDefault("NSQD_PRODUCER_PORT", "4150")
+	NSQD_DATA_INPUT_TOPIC = datainput.EnvDefault("NSQD_TOPIC", "data-input")
 
-	DUMMY_PAYLOAD = "clrd02nme000508jv7lr76gq9"
+	DUMMY_PAYLOAD = "clsr02t9i000008jq38rg9he1"
 )
 
 func main() {
 	// Connext to nsqd as a producer
-	producer, err := nsq.NewProducer(fmt.Sprintf("%s:%s", NSQD_HOST, NSQD_PORT), nsq.NewConfig())
+	producer, err := nsq.NewProducer(fmt.Sprintf("%s:%s", NSQD_PRODUCER_HOST, NSQD_PRODUCER_PORT), nsq.NewConfig())
 	if err != nil {
 		panic(err)
 	}

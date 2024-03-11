@@ -1,10 +1,18 @@
 use serde_json::json;
+use simple_error::SimpleError;
 use sqlx::{Pool, Postgres, Row, Transaction};
 
 // Table Name "Project"
 pub struct Project {
     pub id: String,   // Column names "id"
     pub name: String, // Column names "name"
+    pub status: String, // Column names "status"
+}
+
+pub struct Text {
+    pub id: i32,            // Column names "id"
+    pub project_id: String, // Column names "projectId"
+    pub value: String,      // Column names "value"
 }
 
 pub async fn new_database_pool(
@@ -48,21 +56,52 @@ pub async fn get_tables(pool: &Pool<Postgres>) -> Vec<String> {
     tables
 }
 
-pub async fn get_project_by_id(pool: &Pool<Postgres>, id: &str) -> Vec<Project> {
-    let q_res = sqlx::query(r#"SELECT * FROM "Project" WHERE id = $1"#)
+pub async fn get_text_by_project_id(pool: &Pool<Postgres>, project_id: &str) -> Vec<Text> {
+    let q_res = sqlx::query(r#"SELECT * FROM "Text" WHERE "projectId" = $1"#)
+        .bind(project_id)
+        .fetch_all(pool)
+        .await
+        .unwrap();
+
+    let mut texts: Vec<Text> = Vec::new();
+
+    for row in q_res {
+        let id = row.get("id");
+        let value: String = row.get("value");
+        let project_id: String = row.get("projectId");
+        texts.push(Text {
+            id: id,
+            project_id: project_id,
+            value: value,
+        });
+    }
+    texts
+}
+
+pub async fn get_project_by_id(pool: &Pool<Postgres>, id: &str) -> Result<Project, SimpleError> {
+    let q_res = sqlx::query(r#"SELECT * FROM "Project" WHERE id = $1 LIMIT 1"#)
         .bind(id)
         .fetch_all(pool)
         .await
         .unwrap();
 
-    let mut projects = Vec::new();
+    let mut project = Project {
+        id: "".to_string(),
+        name: "".to_string(),
+        status: "".to_string(),
+    };
+
+    if q_res.len() == 0 {
+        return Err(SimpleError::new("Project not found"));
+    }
 
     for row in q_res {
         let id: String = row.get("id");
         let name: String = row.get("name");
-        projects.push(Project { id, name });
+        let status: String = row.get("status");
+        project = Project { id, name, status };
     }
-    projects
+    Ok(project)
 }
 
 pub async fn change_project_status_by_id(
@@ -97,20 +136,25 @@ pub async fn delete_all_texts_by_project_id(
     }
 }
 
-pub async fn insert_text(
+pub async fn insert_text_embeddings_by_id(
     trx: &mut Transaction<'_, Postgres>,
-    project_id: &str,
-    value: &str,
+    id: i32,
     embeddings: Vec<f32>,
 ) -> Result<u64, sqlx::Error> {
     let embeddings_json = json!(embeddings);
 
     let res = sqlx::query(
-        r#"INSERT INTO "Text" ("projectId", value, embeddings) VALUES ($1, $2, $3) RETURNING id"#,
+        r#"
+        UPDATE 
+            "Text" 
+        SET 
+            embeddings = $1
+        WHERE 
+            id = $2
+        RETURNING id"#,
     )
-    .bind(project_id)
-    .bind(value)
     .bind(embeddings_json)
+    .bind(id)
     .execute(&mut **trx)
     .await;
 

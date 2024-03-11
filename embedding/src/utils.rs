@@ -13,13 +13,11 @@ where
             batch = Vec::new();
         }
         batch.push(input.clone());
-        println!("batch: {batch:?}");
     }
 
     if (results.len() == 0) || (batch.len() > 0) {
         results.push(batch);
     }
 
-    println!("batch: {results:?}");
     results
 }

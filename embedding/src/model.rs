@@ -27,9 +27,6 @@ impl EmbeddingModel {
         let batches = utils::batch(inputs, batch_size);
         let mut final_results: Vec<Vec<f32>> = Vec::new();
 
-        println!("inputs: {:?}", inputs);
-        println!("batches: {:?}", batches);
-
         for batch in batches {
             let results = self.model.encode(batch.as_slice());
             match results {

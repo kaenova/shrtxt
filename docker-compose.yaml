@@ -51,7 +51,7 @@ services:
   nsqd:
     image: nsqio/nsq
     restart: always
-    command: /nsqd --broadcast-address=nsqd --lookupd-tcp-address=nsqlookupd:4160
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160
     depends_on:
       - nsqlookupd
     expose:
@@ -105,11 +105,13 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=changeme
       - DB_NAME=main
-      - NSQD_HOST=nsqd
-      - NSQD_PORT=4150
-      - NSQD_DATA_INPUT_TOPIC="data-input"
-      - NSQD_DATA_INPUT_CHANNEL="data-input-worker"
-      - NSQD_EMBED_TEXT_TOPIC="embed-text"
+      - NSQD_CONSUMER_HOST=nsqlookupd
+      - NSQD_CONSUMER_PORT=4161
+      - NSQD_PRODUCER_HOST=nsqd
+      - NSQD_PRODUCER_PORT=4150
+      - NSQD_DATA_INPUT_TOPIC=data-input
+      - NSQD_DATA_INPUT_CHANNEL=data-input-worker
+      - NSQD_EMBED_TEXT_TOPIC=embed-text
 
   # Embedding Service
   shrtxt-embedding:
@@ -129,8 +131,10 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=changeme
       - DB_NAME=main
-      - NSQD_HOST=nsqd
-      - NSQD_PORT=4150
-      - NSQD_EMBED_TEXT_TOPIC="embed-text"
-      - NSQD_EMBED_TEXT_CHANNEL="embed-text-worker"
-      - NSQD_CLUSTER_TEXT_TOPIC="cluster-text"
+      - NSQD_CONSUMER_HOST=nsqlookupd
+      - NSQD_CONSUMER_PORT=4161
+      - NSQD_PRODUCER_HOST=nsqd
+      - NSQD_PRODUCER_PORT=4150
+      - NSQD_EMBED_TEXT_TOPIC=embed-text
+      - NSQD_EMBED_TEXT_CHANNEL=embed-text-worker
+      - NSQD_CLUSTER_TEXT_TOPIC=cluster-text
